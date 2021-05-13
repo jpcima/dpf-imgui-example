@@ -1,0 +1,6 @@
+[submodule "dpf"]
+	path = dpf
+	url = https://github.com/DISTRHO/DPF.git
+[submodule "imgui"]
+	path = imgui
+	url = https://github.com/ocornut/imgui.git

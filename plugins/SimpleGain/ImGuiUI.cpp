@@ -26,7 +26,9 @@
 #elif defined(IMGUI_GL3)
 # include <imgui_impl_opengl3.h>
 #endif
+#include <vector>
 #include <chrono>
+#include <cstring>
 #include <cmath>
 
 START_NAMESPACE_DISTRHO
@@ -38,6 +40,10 @@ struct ImGuiUI::Impl
 
     void setupGL();
     void cleanupGL();
+    void cleanupDrawCache();
+    void updateDrawCache(const ImDrawData* drawData);
+    bool checkDrawCacheEquals(const ImDrawData* drawData) const;
+    bool updateImGui();
 
     // perhaps DPF will implement this in the future
     float getScaleFactor() const { return 1.0f; }
@@ -46,6 +52,7 @@ struct ImGuiUI::Impl
 
     ImGuiUI* fSelf = nullptr;
     ImGuiContext* fContext = nullptr;
+    std::vector<ImDrawList*> fDrawCache;
     Color fBackgroundColor{0.25f, 0.25f, 0.25f};
     int fRepaintIntervalMs = 15;
 
@@ -79,16 +86,6 @@ void ImGuiUI::onDisplay()
 {
     ImGui::SetCurrentContext(fImpl->fContext);
 
-#if defined(IMGUI_GL2)
-        ImGui_ImplOpenGL2_NewFrame();
-#elif defined(IMGUI_GL3)
-        ImGui_ImplOpenGL3_NewFrame();
-#endif
-
-    ImGui::NewFrame();
-    onImGuiDisplay();
-    ImGui::Render();
-
     ImGuiIO &io = ImGui::GetIO();
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
 
@@ -98,10 +95,14 @@ void ImGuiUI::onDisplay()
         backgroundColor.blue, backgroundColor.alpha);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    ImDrawData* drawData = ImGui::GetDrawData();
+    if (!drawData || !drawData->Valid)
+        return;
+
 #if defined(IMGUI_GL2)
-    ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL2_RenderDrawData(drawData);
 #elif defined(IMGUI_GL3)
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL3_RenderDrawData(drawData);
 #endif
 
     fImpl->fLastRepainted = Impl::Clock::now();
@@ -209,7 +210,10 @@ void ImGuiUI::uiIdle()
     }
 
     if (shouldRepaint)
-        repaint();
+    {
+        if (fImpl->updateImGui())
+            repaint();
+    }
 }
 
 void ImGuiUI::uiReshape(uint width, uint height)
@@ -274,8 +278,10 @@ void ImGuiUI::Impl::setupGL()
 
 #if defined(IMGUI_GL2)
     ImGui_ImplOpenGL2_Init();
+    ImGui_ImplOpenGL2_CreateDeviceObjects();
 #elif defined(IMGUI_GL3)
     ImGui_ImplOpenGL3_Init();
+    ImGui_ImplOpenGL3_CreateDeviceObjects();
 #endif
 }
 
@@ -287,7 +293,88 @@ void ImGuiUI::Impl::cleanupGL()
 #elif defined(IMGUI_GL3)
     ImGui_ImplOpenGL3_Shutdown();
 #endif
+
+    cleanupDrawCache();
+
     ImGui::DestroyContext(fContext);
+}
+
+void ImGuiUI::Impl::cleanupDrawCache()
+{
+    for (ImDrawList* drawList : fDrawCache)
+        IM_DELETE(drawList);
+    fDrawCache.clear();
+}
+
+void ImGuiUI::Impl::updateDrawCache(const ImDrawData* drawData)
+{
+    int drawListCount = drawData->CmdListsCount;
+    cleanupDrawCache();
+    fDrawCache.resize(drawListCount);
+    for (int i = 0; i < drawListCount; ++i)
+    {
+        fDrawCache[i] = drawData->CmdLists[i]->CloneOutput();
+    }
+}
+
+bool ImGuiUI::Impl::checkDrawCacheEquals(const ImDrawData* drawData) const
+{
+    int listCount = drawData->CmdListsCount;
+    if (listCount != (int)fDrawCache.size())
+    {
+        return false;
+    }
+
+    for (int listIdx = 0; listIdx < listCount; ++listIdx)
+    {
+        const ImDrawList* a = drawData->CmdLists[listIdx];
+        const ImDrawList* b = fDrawCache[listIdx];
+
+        if (a->Flags != b->Flags)
+            return false;
+
+        struct BinaryItem
+        {
+            const void* data;
+            int size;
+        };
+
+        const BinaryItem itemsToCompare[] = {
+            { a->CmdBuffer.Data, (int)(a->CmdBuffer.Size / sizeof(ImDrawCmd)) },
+            { b->CmdBuffer.Data, (int)(b->CmdBuffer.Size / sizeof(ImDrawCmd)) },
+            { a->IdxBuffer.Data, (int)(a->IdxBuffer.Size / sizeof(ImDrawIdx)) },
+            { b->IdxBuffer.Data, (int)(b->IdxBuffer.Size / sizeof(ImDrawIdx)) },
+            { a->VtxBuffer.Data, (int)(a->VtxBuffer.Size / sizeof(ImDrawVert)) },
+            { b->VtxBuffer.Data, (int)(b->VtxBuffer.Size / sizeof(ImDrawVert)) },
+        };
+
+        for (int i = 0, n = IM_ARRAYSIZE(itemsToCompare) / 2; i < n; ++i)
+        {
+            const BinaryItem& a = itemsToCompare[i * 2];
+            const BinaryItem& b = itemsToCompare[i * 2 + 1];
+            int size = a.size;
+            if (size != b.size || std::memcmp(a.data, b.data, size))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+bool ImGuiUI::Impl::updateImGui()
+{
+    ImGui::SetCurrentContext(fContext);
+
+    ImGui::NewFrame();
+    fSelf->onImGuiDisplay();
+    ImGui::Render();
+
+    ImDrawData* drawData = ImGui::GetDrawData();
+    if (checkDrawCacheEquals(drawData))
+        return false;
+
+    updateDrawCache(drawData);
+    return true;
 }
 
 int ImGuiUI::Impl::mouseButtonToImGui(int button)

@@ -114,9 +114,8 @@ void UISimpleGain::onImGuiDisplay() {
         {
             editParameter(PluginSimpleGain::paramGain, false);
         }
-
-        ImGui::End();
     }
+    ImGui::End();
 }
 
 // -----------------------------------------------------------------------

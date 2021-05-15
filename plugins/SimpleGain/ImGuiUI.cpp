@@ -21,7 +21,7 @@
 #include <chrono>
 #include <cmath>
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 struct ImGuiUI::Impl
 {
@@ -297,4 +297,4 @@ int ImGuiUI::Impl::mouseButtonToImGui(int button)
     }
 }
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

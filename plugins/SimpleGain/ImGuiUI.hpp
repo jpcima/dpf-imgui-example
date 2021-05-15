@@ -22,7 +22,7 @@
 # error ImGUI is only available in OpenGL mode
 #endif
 
-START_NAMESPACE_DISTRHO
+START_NAMESPACE_DGL
 
 /**
    ImGui user interface class.
@@ -52,4 +52,4 @@ private:
     Impl* fImpl;
 };
 
-END_NAMESPACE_DISTRHO
+END_NAMESPACE_DGL

@@ -72,9 +72,9 @@ void ImGuiUI::onDisplay()
     ImGui::SetCurrentContext(fImpl->fContext);
 
 #if defined(IMGUI_GL2)
-        ImGui_ImplOpenGL2_NewFrame();
+    ImGui_ImplOpenGL2_NewFrame();
 #elif defined(IMGUI_GL3)
-        ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
 #endif
 
     ImGui::NewFrame();

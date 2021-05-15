@@ -14,7 +14,9 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <GL/glew.h>
+#if defined(IMGUI_GL3)
+# include <GL/glew.h>
+#endif
 
 #include "ImGuiUI.hpp"
 #include "ImGuiSrc.hpp"
@@ -232,7 +234,9 @@ ImGuiUI::Impl::~Impl()
 
 void ImGuiUI::Impl::setupGL()
 {
+#if defined(IMGUI_GL3)
     glewInit();
+#endif
 
     IMGUI_CHECKVERSION();
     fContext = ImGui::CreateContext();

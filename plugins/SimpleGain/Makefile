@@ -73,8 +73,10 @@ include ../../dpf/Makefile.plugins.mk
 
 BUILD_CXX_FLAGS += -I../../imgui -I../../imgui/backends
 
-BUILD_CXX_FLAGS += $(shell $(PKG_CONFIG) glew --cflags)
-LINK_FLAGS += $(shell $(PKG_CONFIG) glew --libs)
+# To enable OpenGL 3 support, instead of OpenGL 2
+#BUILD_CXX_FLAGS += -DIMGUI_GL3=1
+#BUILD_CXX_FLAGS += $(shell $(PKG_CONFIG) glew --cflags)
+#LINK_FLAGS += $(shell $(PKG_CONFIG) glew --libs)
 
 # --------------------------------------------------------------
 # Enable all selected plugin types

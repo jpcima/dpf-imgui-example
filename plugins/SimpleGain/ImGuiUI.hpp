@@ -27,7 +27,8 @@ START_NAMESPACE_DGL
 /**
    ImGui user interface class.
 */
-class ImGuiUI : public UI {
+class ImGuiUI : public UI,
+                public IdleCallback {
 public:
     ImGuiUI(int width, int height);
     ~ImGuiUI();
@@ -44,8 +45,8 @@ protected:
     virtual bool onMouse(const MouseEvent& event) override;
     virtual bool onMotion(const MotionEvent& event) override;
     virtual bool onScroll(const ScrollEvent& event) override;
-    virtual void uiIdle() override;
     virtual void uiReshape(uint width, uint height) override;
+    virtual void idleCallback() override;
 
 private:
     struct Impl;

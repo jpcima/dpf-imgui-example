@@ -18,6 +18,7 @@
 
 #include "ImGuiUI.hpp"
 #include "ImGuiSrc.hpp"
+#include "Window.hpp"
 #include <chrono>
 #include <cmath>
 
@@ -50,10 +51,12 @@ ImGuiUI::ImGuiUI(int width, int height)
     : UI(width, height),
       fImpl(new ImGuiUI::Impl(this))
 {
+    getParentWindow().addIdleCallback(this);
 }
 
 ImGuiUI::~ImGuiUI()
 {
+    getParentWindow().removeIdleCallback(this);
     delete fImpl;
 }
 
@@ -183,7 +186,19 @@ bool ImGuiUI::onScroll(const ScrollEvent& event)
     return io.WantCaptureMouse;
 }
 
-void ImGuiUI::uiIdle()
+void ImGuiUI::uiReshape(uint width, uint height)
+{
+    UI::uiReshape(width, height);
+
+    ImGui::SetCurrentContext(fImpl->fContext);
+    ImGuiIO &io = ImGui::GetIO();
+
+    const float scaleFactor = fImpl->getScaleFactor();
+    io.DisplaySize.x = std::round(scaleFactor * width);
+    io.DisplaySize.y = std::round(scaleFactor * height);
+}
+
+void ImGuiUI::idleCallback()
 {
     bool shouldRepaint;
 
@@ -202,18 +217,6 @@ void ImGuiUI::uiIdle()
 
     if (shouldRepaint)
         repaint();
-}
-
-void ImGuiUI::uiReshape(uint width, uint height)
-{
-    UI::uiReshape(width, height);
-
-    ImGui::SetCurrentContext(fImpl->fContext);
-    ImGuiIO &io = ImGui::GetIO();
-
-    const float scaleFactor = fImpl->getScaleFactor();
-    io.DisplaySize.x = std::round(scaleFactor * width);
-    io.DisplaySize.y = std::round(scaleFactor * height);
 }
 
 ImGuiUI::Impl::Impl(ImGuiUI* self)

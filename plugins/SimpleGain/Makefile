@@ -62,7 +62,8 @@ FILES_DSP = \
 
 FILES_UI = \
 	UISimpleGain.cpp \
-	ImGuiUI.cpp
+	ImGuiUI.cpp \
+	ImGuiSrc.cpp
 
 # --------------------------------------------------------------
 # Do some magic

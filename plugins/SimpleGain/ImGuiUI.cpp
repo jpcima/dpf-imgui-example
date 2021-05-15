@@ -17,15 +17,7 @@
 #include <GL/glew.h>
 
 #include "ImGuiUI.hpp"
-#include <imgui.h>
-#if !defined(IMGUI_GL2) && !defined(IMGUI_GL3)
-# define IMGUI_GL2 1
-#endif
-#if defined(IMGUI_GL2)
-# include <imgui_impl_opengl2.h>
-#elif defined(IMGUI_GL3)
-# include <imgui_impl_opengl3.h>
-#endif
+#include "ImGuiSrc.hpp"
 #include <chrono>
 #include <cmath>
 
@@ -306,13 +298,3 @@ int ImGuiUI::Impl::mouseButtonToImGui(int button)
 }
 
 END_NAMESPACE_DISTRHO
-
-#include <imgui.cpp>
-#include <imgui_draw.cpp>
-#include <imgui_tables.cpp>
-#include <imgui_widgets.cpp>
-#if defined(IMGUI_GL2)
-#include <imgui_impl_opengl2.cpp>
-#elif defined(IMGUI_GL3)
-#include <imgui_impl_opengl3.cpp>
-#endif
